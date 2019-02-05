@@ -1,5 +1,6 @@
 """
 功能：根据骨架对相场模型进行标记
+注意：index为索引例如体素索引为68971236，position为 196*198*200  举例：68971236 = 196*198*200
 """
 import numpy as np
 import imageUtility as utility
@@ -88,37 +89,25 @@ if __name__ == "__main__":
         startIndex += edge_voxel_num[i]  # 临时变量叠加
         edge = SkeletonEdge(i, edgeVoxel, edge_voxel_num[i])  # 创建骨架对象
         edgeList.append(edge)  # 送入list
+
+
     # 计算最小距离
-    pointExample = np.array([164, 199, 198])
-    allEdgeMinDistance = []
-    for i in range(len(edgeList)):
-        voxelPosition = indexToPosition(edgeList[i].point)
-        d = calculateMinDistance(pointExample, voxelPosition)
-        allEdgeMinDistance.append(d)
-    minDistance = min(allEdgeMinDistance)
-    edgeIndex = allEdgeMinDistance.index(minDistance)
-    
+    # 体素位置
+    modelVoxelPosition = np.argwhere(modelStack == 1)  # 此示例为69476个
+    voxelLabel = []  # 体素标记
+    voxelIndex = []  # 体素索引
 
-
-    # # 得到骨架体素点坐标
-    # index = np.argwhere(skelStack == 1)
-    # #计算欧式距离
-    # pointExample = np.array([164, 199, 198])
-    # dist = []
-    # # 可以改写成map
-    # for one in index:
-    #     d = np.linalg.norm(one-pointExample)
-    #     dist.append(d)
-    # minDist = min(dist)
-    # # 端点值
-    # centerNode = np.array([198, 202, 197])
-    # node = np.array([
-    #     [198, 175, 198],
-    #     [198, 202, 167],
-    #     [168, 202, 198],
-    #     [198, 202, 230],
-    #     [228, 202, 198],
-    #     [198, 233, 198]
-    # ])
-    # # 得到最小值，已经对应体素，需找到体素对应骨架的方法
-
+    for everyPosition in modelVoxelPosition:
+        allEdgeMinDistance = []
+        for i in range(len(edgeList)):
+            voxelPosition = indexToPosition(edgeList[i].point)
+            d = calculateMinDistance(everyPosition, voxelPosition)
+            allEdgeMinDistance.append(d)
+        minDistance = min(allEdgeMinDistance)
+        edgeIndex = allEdgeMinDistance.index(minDistance)
+        # 存入列表
+        voxelLabel.append(edgeIndex)
+        index = everyPosition[0]*everyPosition[1]*everyPosition[2]
+        voxelIndex.append(index)
+    print(voxelLabel)
+    # print(voxelIndex)
