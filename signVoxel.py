@@ -52,28 +52,30 @@ def dyeingAndSectionSkeleton(imageStacks, outputDir, ext=".png"):
     label_num = len(imageStacks)
     for item in range(label_num):
         image_label = imageStacks[:, :, item]
+        image_label_num = np.unique(image_label)
         image_rgb = np.zeros((w, h, 3))
+        image_rgb[image_label == 0] = [255, 0, 0]
         image_rgb[image_label == 1] = [113, 148, 191]
-        image_rgb[image_label == 0] = [0, 0, 0]
-        print(os.path.join(outputDir, str(item + 1).zfill(3) + ".png"))
+        image_rgb[image_label == 2] = [100, 87, 63]
+        image_rgb[image_label == 3] = [100, 87, 0]
+        image_rgb[image_label == 4] = [100, 0, 63]
+        image_rgb[image_label == 5] = [0, 87, 63]
         cv2.imwrite(os.path.join(outputDir, str(item + 1).zfill(3) + ".png"), image_rgb)
 
 
 if __name__ == "__main__":
+    # 相场模型原始数据
     modelInputAddress = '.\\data\\original\\mat\\Pha1_00001_value.mat'
     modelStack = utility.getLabelStackFromMat(modelInputAddress)
+    # 读取骨架Stack数据
     skelInputAddress = '.\\data\\original\\mat\\Pha1_00001_skel.mat'
     skelStack = utility.getLabelStackFromMat(skelInputAddress)
+    # 由方法生成骨架体素数据
     skelPostionInputAddress = '.\\data\\original\\mat\\Pha1_00001_skeleton_postion.mat'
     skelPositionStack = utility.getLabelStackFromMat(skelPostionInputAddress)
     skelPositionStack = skelPositionStack[0, :]
 
-    outputDir = '.\\result\\slicerColor\\'
-    dyeingAndSectionSkeleton(modelStack, outputDir)
-
-
-
-    # 得到骨架对象列表，list
+    # 得到骨架对象列表，list[edge0,edge1,edge2........]
     # 每条骨架体素个数
     edge_voxel_num = [30, 30, 27, 30, 31, 33]
     edge_num = len(edge_voxel_num)  # 骨架总数
@@ -85,21 +87,19 @@ if __name__ == "__main__":
         edge = SkeletonEdge(i, edgeVoxel, edge_voxel_num[i])  # 创建骨架对象
         edgeList.append(edge)  # 送入list
 
-    # # 计算最小距离
-    # # 体素位置
-    # modelVoxelPosition = np.argwhere(modelStack == 1)  # 此示例为69476个
-    # voxelLabel = []  # 体素标记值
-    # voxelIndex = []  # 体素索引
-    # for everyPosition in modelVoxelPosition:
-    #     allEdgeMinDistance = []
-    #     for i in range(len(edgeList)):
-    #         voxelPosition = indexToPosition(edgeList[i].point)
-    #         d = calculateMinDistance(everyPosition, voxelPosition)
-    #         allEdgeMinDistance.append(d)
-    #     minDistance = min(allEdgeMinDistance)
-    #     edgeIndex = allEdgeMinDistance.index(minDistance)
-    #     # 存入列表
-    #     voxelLabel.append(edgeIndex)
-    #     index = everyPosition[0]*everyPosition[1]*everyPosition[2]
-    #     voxelIndex.append(index)
-    # labelVoxel = dict(zip(voxelIndex, voxelLabel))
+    # 计算最小距离并设置标记值
+    modelVoxelPosition = np.argwhere(modelStack == 1)  # 体素位置
+    labelStack = np.zeros((400, 400, 400))  # 初始化空矩阵
+    for everyPosition in modelVoxelPosition[0:30000]:  # [198, 197, 163]
+        allEdgeMinDistance = []
+        for i in range(len(edgeList)):
+            voxelPosition = indexToPosition(edgeList[i].point)
+            d = calculateMinDistance(everyPosition, voxelPosition)
+            allEdgeMinDistance.append(d)
+        minDistance = min(allEdgeMinDistance)
+        edgeIndex = allEdgeMinDistance.index(minDistance)
+        labelStack[everyPosition[0], everyPosition[1], everyPosition[2]] = edgeIndex
+
+    # 生成切片
+    outputDir = '.\\result\\slicerColor\\'
+    dyeingAndSectionSkeleton(labelStack, outputDir)
