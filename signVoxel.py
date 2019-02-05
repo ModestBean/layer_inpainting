@@ -4,31 +4,8 @@
 """
 import numpy as np
 import imageUtility as utility
-import random
 import cv2
-
-# def dyeingAndSection(imageStacks, outputDir, ext=".png"):
-#     w, h, depth = imageStacks.shape
-#     label_num = len(imageStacks)
-#     color_list = []
-#     while len(color_list) < label_num:
-#         R = random.randint(1, 255)
-#         G = random.randint(1, 255)
-#         B = random.randint(1, 255)
-#         RGB = str(R) + "," + str(G) + "," + str(B)
-#         color_list.append(RGB)  # ['198,2,243', '171,30,224', '219,21,204', '3,34,254',
-#         # 去重复
-#         color_list = list({}.fromkeys(color_list).keys())  # ['83,141,49', '127,181,148', '239,247,145', '128,66,223', '243,69,87'
-#
-#     image_gray = np.argwhere(imageStacks[:, :, 0] == 1)
-#     utility.mkoutdir(outputDir)
-#     for i in range(depth):
-#         image_label = imageStacks[:, :, i]
-#         image_rgb = np.zeros((w, h, 3))
-#         image_rgb[image_label == 1] = np.array([1, 0, 0])
-#         image_rgb[image_label == 0] = np.array([0, 1, 0])
-#         fileName = str(i).zfill(3) + ext
-#         cv2.imwrite(outputDir + fileName, image_rgb)
+import os
 
 
 class SkeletonEdge(object):
@@ -69,6 +46,19 @@ def calculateMinDistance(onePoint, voxelPosition):
     minDistance = min(distance)
     return minDistance
 
+def dyeingAndSectionSkeleton(imageStacks, outputDir, ext=".png"):
+    utility.mkoutdir(outputDir)
+    w, h, depth = imageStacks.shape
+    label_num = len(imageStacks)
+    for item in range(label_num):
+        image_label = imageStacks[:, :, item]
+        image_rgb = np.zeros((w, h, 3))
+        image_rgb[image_label == 1] = [113, 148, 191]
+        image_rgb[image_label == 0] = [0, 0, 0]
+        print(os.path.join(outputDir, str(item + 1).zfill(3) + ".png"))
+        cv2.imwrite(os.path.join(outputDir, str(item + 1).zfill(3) + ".png"), image_rgb)
+
+
 if __name__ == "__main__":
     modelInputAddress = '.\\data\\original\\mat\\Pha1_00001_value.mat'
     modelStack = utility.getLabelStackFromMat(modelInputAddress)
@@ -77,6 +67,11 @@ if __name__ == "__main__":
     skelPostionInputAddress = '.\\data\\original\\mat\\Pha1_00001_skeleton_postion.mat'
     skelPositionStack = utility.getLabelStackFromMat(skelPostionInputAddress)
     skelPositionStack = skelPositionStack[0, :]
+
+    outputDir = '.\\result\\slicerColor\\'
+    dyeingAndSectionSkeleton(modelStack, outputDir)
+
+
 
     # 得到骨架对象列表，list
     # 每条骨架体素个数
@@ -90,24 +85,21 @@ if __name__ == "__main__":
         edge = SkeletonEdge(i, edgeVoxel, edge_voxel_num[i])  # 创建骨架对象
         edgeList.append(edge)  # 送入list
 
-
-    # 计算最小距离
-    # 体素位置
-    modelVoxelPosition = np.argwhere(modelStack == 1)  # 此示例为69476个
-    voxelLabel = []  # 体素标记
-    voxelIndex = []  # 体素索引
-
-    for everyPosition in modelVoxelPosition:
-        allEdgeMinDistance = []
-        for i in range(len(edgeList)):
-            voxelPosition = indexToPosition(edgeList[i].point)
-            d = calculateMinDistance(everyPosition, voxelPosition)
-            allEdgeMinDistance.append(d)
-        minDistance = min(allEdgeMinDistance)
-        edgeIndex = allEdgeMinDistance.index(minDistance)
-        # 存入列表
-        voxelLabel.append(edgeIndex)
-        index = everyPosition[0]*everyPosition[1]*everyPosition[2]
-        voxelIndex.append(index)
-    print(voxelLabel)
-    # print(voxelIndex)
+    # # 计算最小距离
+    # # 体素位置
+    # modelVoxelPosition = np.argwhere(modelStack == 1)  # 此示例为69476个
+    # voxelLabel = []  # 体素标记值
+    # voxelIndex = []  # 体素索引
+    # for everyPosition in modelVoxelPosition:
+    #     allEdgeMinDistance = []
+    #     for i in range(len(edgeList)):
+    #         voxelPosition = indexToPosition(edgeList[i].point)
+    #         d = calculateMinDistance(everyPosition, voxelPosition)
+    #         allEdgeMinDistance.append(d)
+    #     minDistance = min(allEdgeMinDistance)
+    #     edgeIndex = allEdgeMinDistance.index(minDistance)
+    #     # 存入列表
+    #     voxelLabel.append(edgeIndex)
+    #     index = everyPosition[0]*everyPosition[1]*everyPosition[2]
+    #     voxelIndex.append(index)
+    # labelVoxel = dict(zip(voxelIndex, voxelLabel))
