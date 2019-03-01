@@ -1,3 +1,4 @@
+#-*- coding:utf-8 -*-
 """
 功能：根据骨架对相场模型进行标记
 注意：index为索引例如体素索引为68971236，position为 196*198*200  举例：68971236 = 196*198*200
@@ -7,6 +8,8 @@ import imageUtility as utility
 import cv2
 import os
 import time
+import os
+import scipy.io as sio
 
 class SkeletonEdge(object):
     """
@@ -57,21 +60,18 @@ def dyeingAndSectionSkeleton(imageStacks, outputDir, ext=".png"):
         image_rgb[image_label == 1] = [255, 0, 0]
         image_rgb[image_label == 2] = [0, 255, 0]
         image_rgb[image_label == 3] = [0, 0, 255]
-        image_rgb[image_label == 4] = [255, 255, 0]
-        image_rgb[image_label == 5] = [0, 255, 255]
-        image_rgb[image_label == 6] = [255, 0, 255]
+        image_rgb[image_label == 4] = [255, 255, 0]  # 黄色
+        image_rgb[image_label == 5] = [0, 255, 255]  # 淡紫色
+        image_rgb[image_label == 6] = [255, 0, 255]  # 淡蓝色
         cv2.imwrite(os.path.join(outputDir, str(item + 1).zfill(3) + ".png"), image_rgb)
-
 
 if __name__ == "__main__":
     # 相场模型原始数据
-    modelInputAddress = '.\\data\\original\\mat\\Pha1_00001_value.mat'
+    modelInputAddress = '.\\data\\mat\\Pha1_00001_value.mat'
     modelStack = utility.getLabelStackFromMat(modelInputAddress)
-    # 读取骨架Stack数据
-    skelInputAddress = '.\\data\\original\\mat\\Pha1_00001_skel.mat'
-    skelStack = utility.getLabelStackFromMat(skelInputAddress)
+
     # 由方法生成骨架体素数据
-    skelPostionInputAddress = '.\\data\\original\\mat\\Pha1_00001_skeleton_postion.mat'
+    skelPostionInputAddress = '.\\data\\mat\\Pha1_00001_skeleton_postion.mat'
     skelPositionStack = utility.getLabelStackFromMat(skelPostionInputAddress)
     skelPositionStack = skelPositionStack[0, :]
 
@@ -90,18 +90,29 @@ if __name__ == "__main__":
     # 计算最小距离并设置标记值
     modelVoxelPosition = np.argwhere(modelStack == 1)  # 体素位置
     labelStack = np.zeros((400, 400, 400))  # 初始化空矩阵
+    labelStackNoBack = []  # 带标记矩阵大小 ？×4   例如 [[198,196,132,1],[197,196,192,2]]
     startTime = time.time()
+    # 取出相场模型体素点
     for everyPosition in modelVoxelPosition:  # [198, 197, 163]
         allEdgeMinDistance = []
         for i in range(len(edgeList)):
+            # 转换骨架索引点到体素位置
             voxelPosition = indexToPosition(edgeList[i].point)
+            # 计算距离骨架最小值
             d = calculateMinDistance(everyPosition, voxelPosition)
             allEdgeMinDistance.append(d)
         minDistance = min(allEdgeMinDistance)
         edgeIndex = allEdgeMinDistance.index(minDistance)+1
         labelStack[everyPosition[0], everyPosition[1], everyPosition[2]] = edgeIndex
+        # 写出label结果
+        tempList = [everyPosition[0], everyPosition[1], everyPosition[2], edgeIndex]
+        labelStackNoBack.append(tempList)
     endTime = time.time()
     print("Erode duration:{}'s".format(endTime - startTime))
     # 生成切片
     outputDir = '.\\result\\slicerColor\\'
     dyeingAndSectionSkeleton(labelStack, outputDir)
+    # 生成mat
+    outputDir = ".\\result\\"
+    fileName = "Pha1_00001_label.mat"
+    sio.savemat(os.path.join(outputDir, fileName), {"Pha1_00001_label": labelStackNoBack})

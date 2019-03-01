@@ -85,7 +85,7 @@ def getLabelStackFromMat(inputAddress):
     :return:读取的labelStack
     """
     fileName = os.path.basename(inputAddress).split(".")[0]
-    labelStack = io.loadmat(inputAddress)["img"]
+    labelStack = io.loadmat(inputAddress)[fileName]
     return labelStack
 
 def saveLabelStackToMat(labelStack, outputDir, fileName):
@@ -200,8 +200,8 @@ if __name__ == "__main__":
     #     transformTxtToMat(fileList[index])
 
     #读取stack, 将其边缘腐蚀几层
-    iterationNum = 5
-    inputAddress = ".\\data\\original\\mat\\Pha1_00006_value.mat"
+    iterationNum = 3
+    inputAddress = ".\\mat_folder\\Pha1_00006_value.mat"
     labelStack = getLabelStackFromMat(inputAddress)
     startTime = time.time()
     erodeStack = erodeLabelStack(labelStack, iteration=iterationNum)
@@ -210,8 +210,8 @@ if __name__ == "__main__":
     outputDir = ".\\result\\erodeFile\\"
     fileName = "Pha1_00006_erode_value.mat"
     mat_path = outputDir+fileName
-    #saveLabelStackToImages(erodeStack, outputDir)
-    #savaLabelStackToMat(erodeStack, mat_path)
+    saveLabelStackToImagesX(erodeStack, outputDir)
+    savaLabelStackToMat(erodeStack, mat_path)
 
     # 在XYZ方向上分别切片
     # inputAddress = ".\\data\\original\\mat\\front_delete.mat"
