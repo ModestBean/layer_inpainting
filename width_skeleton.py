@@ -10,7 +10,6 @@ from skimage.morphology import medial_axis, skeletonize, skeletonize_3d
 imageInputAddress = '.\\data\\width\\width_image.png'
 data = cv2.imread(imageInputAddress, 0)
 data = (data == 255)
-print(imageInputAddress)
 # data = binary_blobs(200, blob_size_fraction=.2, volume_fraction=.35, seed=1)
 # Compute the medial axis (skeleton) and the distance transform
 skel, distance = medial_axis(data, return_distance=True)
@@ -20,7 +19,7 @@ skeleton = skeletonize(data)
 skeleton3d = skeletonize_3d(data)
 
 # Distance to the background for pixels of the skeleton
-dist_on_skel = distance * skel
+dist_on_skel = distance
 
 fig, axes = plt.subplots(2, 2, figsize=(8, 8), sharex=True, sharey=True)
 ax = axes.ravel()
